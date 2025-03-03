@@ -1,20 +1,20 @@
 from fastapi import FastAPI
-from core.chat import ChatAgent
+from pydantic import BaseModel
+from core.chat import Chatbot
 
 app = FastAPI()
-chat_agent = ChatAgent()
+chatbot = Chatbot()
 
-@app.post("/chat")
-async def ask_question(question: str):
-    """Handles chat requests via API."""
-    context = chat_agent.pinecone.query(question)
+class ChatRequest(BaseModel):
+    message: str
 
-    if not context:
-        return {"answer": "I am sorry, I cannot answer this."}
+@app.post("/chat/")
+def chat(request: ChatRequest):
+    """Handles chat requests via FastAPI."""
+    user_input = request.message
+    return {"response": chatbot.process_message(user_input)}
 
-    answer = chat_agent.llm.generate_answer(question, context)
-
-    if chat_agent.llm.verify_answer(question, answer):
-        return {"question": question, "answer": answer}
-    
-    return {"answer": "I am sorry, I cannot answer this."}
+@app.get("/")
+def read_root():
+    """Root endpoint to check API status."""
+    return {"message": "Ask My Docs API is running!"}
